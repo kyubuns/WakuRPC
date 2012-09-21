@@ -12,3 +12,9 @@ chatNotify :
    [name , String],
    [msg  , String],
  ]
+
+info :
+ [
+   S->C,
+   [msg  , String],
+ ]

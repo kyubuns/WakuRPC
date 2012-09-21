@@ -23,6 +23,9 @@ class Client extends Connection {
   override public function chatNotify(id:Int, name:String, msg:String):Void {
     ChatClient.addtext(name + "(" + Std.string(id) + ") - " + msg);
   }
+  override public function info(msg:String):Void {
+    ChatClient.addtext("<i>" + msg + "</i>");
+  }
 }
 
 class ChatClient {
