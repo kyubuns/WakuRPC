@@ -1,0 +1,21 @@
+git clone
+　　↘
+　cd sample_chat
+　　↙
+./run_server
+　　　↘
+　　./run_server
+　　　↙
+＿人人人人人人人人＿
+＞　./run_server　＜
+￣^Y^Y^Y^Y^Y^Y^￣
+
+ToDo:READMEちゃんと書く
+
+---
+
+memo
+Haxe Compiler 2.10 <- なんか新しくても古くてもエラー吐いたり必要なコード吐かれなかったりする
+node v0.8.8
+socket.io@0.9.10
+python(pip install pyyaml)
