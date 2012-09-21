@@ -11,7 +11,6 @@ class Server {
     m_io.sockets.on('connection', function(socket:Socket) {
       trace('connection');
       var con:Connection = Type.createInstance(connection , [socket]);
-      con.onopen();
     });
   }
 }
@@ -80,6 +79,8 @@ class Connection {
     {% for function in CtoS %}
     m_functions.set({{function.id}}, call_{{function.name}});
     {% endfor %}
+
+    onopen();
   }
 
 //====================================================================================
