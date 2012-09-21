@@ -1,0 +1,12 @@
+-js bin/chat_server.js
+-cp src
+-main ChatServer
+--dead-code-elimination
+-lib nodejs
+-debug
+--next
+-js bin/chat_client.js
+-cp src
+-main ChatClient
+--dead-code-elimination
+-debug

@@ -1,0 +1,14 @@
+chat :
+ [
+   C->S,
+   [name , String],
+   [msg  , String],
+ ]
+
+chatNotify :
+ [
+   S->C,
+   [id   , Int],
+   [name , String],
+   [msg  , String],
+ ]
