@@ -13,13 +13,13 @@ class Client extends Connection{
     clients.set(myid, this);
 
     trace("onopen - ID:" + Std.string(myid));
-    for(con in Client.clients) con.info("ID:"+Std.string(myid)+"さんが来たよ〜");
+    for(con in Client.clients) con.info("ID:"+Std.string(myid)+"さんが来たよ〜", []);
   }
 
   override public function onclose():Void {
     clients.remove(myid);
     trace("onclose - ID:" + Std.string(myid));
-    for(con in Client.clients) con.info("ID:"+Std.string(myid)+"さんが帰ったよ〜");
+    for(con in Client.clients) con.info("ID:"+Std.string(myid)+"さんが帰ったよ〜", []);
   }
 
   override public function chat(name:String, msg:String):Void {
@@ -43,6 +43,10 @@ class ChatServer {
     //ここから何も送られてこなくてもイベント発生させられる
     var fugaaaa:String = Std.string(Lambda.count(Client.clients));
     trace("tick" + fugaaaa);
-    for(con in Client.clients) con.info("現在"+fugaaaa+"人が接続中。");
+    var member = new Array<String>();
+    member.push("aaa");
+    member.push("bbb");
+    member.push("ccc");
+    for(con in Client.clients) con.info("現在"+fugaaaa+"人が接続中。", member);
   }
 }

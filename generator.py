@@ -74,7 +74,7 @@ for name, args in yuu.items():
       tmp.append(arg[0])
     else:
       if arg[1] == 'Array':
-        tmp.append({'name':arg[0], 'type':'Array<'+arg[2]+'>', 'is_array':True})
+        tmp.append({'name':arg[0], 'type':'Array<'+arg[2]+'>', 'elementtype':arg[2], 'is_array':True})
       else:
         tmp.append({'name':arg[0], 'type':arg[1], 'is_array':False})
 

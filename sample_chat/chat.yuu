@@ -17,4 +17,5 @@ info :
  [
    S->C,
    [msg  , String],
+   [member, Array, String]
  ]

@@ -71,7 +71,7 @@ class Connection {
     {% if arg.is_array %}
     tmp = {{loop.index0|to_arg}};
     var {{arg.name}} = new {{arg.type}}();
-    for(i in 0...tmp.length) {{arg.name}}.push({{"tmp[i]"|cast('Int')}});
+    for(i in 0...tmp.length) {{arg.name}}.push({{"tmp[i]"|cast(arg.elementtype)}});
     {% else %}
     var {{arg.name}}:{{arg.type}} = {{loop.index0|to_arg|cast(arg.type)}};
     {% endif %}
