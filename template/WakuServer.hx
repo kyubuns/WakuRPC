@@ -66,9 +66,7 @@ class Connection {
       m_handshaked = true;
       m_commandNo = 0;
     }
-    catch(errorMsg:String) {
-      trace("handshake error");
-    }
+    catch(errorMsg:String) trace("handshake error[" + errorMsg + "]");
 
     m_socket.emit('handshake', [m_handshaked, m_commandNo]);
     if(m_handshaked == false) {

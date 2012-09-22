@@ -59,7 +59,7 @@ class Connection {
 
       onopen();
     }
-    catch(errorMsg:String) error("handshake error");
+    catch(errorMsg:String) error("handshake error[" + errorMsg + "]");
   }
 
 //====================================================================================
@@ -93,7 +93,6 @@ class Connection {
     {{arg.name}} = Lambda.array(Lambda.map({{arg.name}}, sanitize));
     {% endif %}
     {% endfor %}
-    if(m_commandNo > 1000) m_commandNo = 0;
     m_socket.emit('message', [++m_commandNo, {{function.id}}, [{% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}{% endfor %}]]);
     return true;
   }
