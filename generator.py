@@ -43,54 +43,55 @@ def is_class(v):
 
 
 #main
-if len(sys.argv) != 4:
-  print 'usagee python generator.py [yuu_file] [template_file] [output_filename]'
-  quit(1)
+if __name__ == "__main__":
+  if len(sys.argv) != 4:
+    print 'usagee python generator.py [yuu_file] [template_file] [output_filename]'
+    quit(1)
 
-yuu_filename = sys.argv[1]
-template_filename = sys.argv[2]
-output_filename = sys.argv[3]
+  yuu_filename = sys.argv[1]
+  template_filename = sys.argv[2]
+  output_filename = sys.argv[3]
 
-yuu = yaml.load(open(yuu_filename).read())
-env = Environment(loader=FileSystemLoader("."))
-env.filters['cast'] = cast
-env.filters['to_arg'] = to_arg
-env.tests['classname'] = is_class
+  yuu = yaml.load(open(yuu_filename).read())
+  env = Environment(loader=FileSystemLoader("."))
+  env.filters['cast'] = cast
+  env.filters['to_arg'] = to_arg
+  env.tests['classname'] = is_class
 
-random.seed(sha1file(yuu_filename))
-random_ids = range(1000, 10000)
-random.shuffle(random_ids)
+  random.seed(sha1file(yuu_filename))
+  random_ids = range(1000, 10000)
+  random.shuffle(random_ids)
 
-lists = {}
-lists['C->S'] = []
-lists['S->C'] = []
-lists['struct'] = []
+  lists = {}
+  lists['C->S'] = []
+  lists['S->C'] = []
+  lists['struct'] = []
 
-for name, args in yuu.items():
-  type = args[0]
-  output = {
-    'name' : name,
-    'type' : type,
-    'id'   : random_ids[-1]
-  }
-  random_ids.pop()
-  tmp = []
-  for arg in args[1:]:
-    if arg[1] == 'Array':
-      tmp.append({'name':arg[0], 'type':'Array<'+arg[2]+'>', 'elementtype':arg[2], 'is_array':True})
-    else:
-      tmp.append({'name':arg[0], 'type':arg[1], 'is_array':False})
+  for name, args in yuu.items():
+    type = args[0]
+    output = {
+      'name' : name,
+      'type' : type,
+      'id'   : random_ids[-1]
+    }
+    random_ids.pop()
+    tmp = []
+    for arg in args[1:]:
+      if arg[1] == 'Array':
+        tmp.append({'name':arg[0], 'type':'Array<'+arg[2]+'>', 'elementtype':arg[2], 'is_array':True})
+      else:
+        tmp.append({'name':arg[0], 'type':arg[1], 'is_array':False})
+  
+    output['args'] = tmp
+    lists[type].append(output)
 
-  output['args'] = tmp
-  lists[type].append(output)
-
-template = env.get_template(template_filename)
-f = open(output_filename, 'w')
-f = codecs.lookup('utf_8')[-1](f)
-f.write(template.render(
-  CtoS       = lists['C->S'],
-  StoC       = lists['S->C'],
-  structs    = lists['struct'],
-  yuuversion = sha1file(yuu_filename)
-  ))
-f.close()
+  template = env.get_template(template_filename)
+  f = open(output_filename, 'w')
+  f = codecs.lookup('utf_8')[-1](f)
+  f.write(template.render(
+    CtoS       = lists['C->S'],
+    StoC       = lists['S->C'],
+    structs    = lists['struct'],
+    yuuversion = sha1file(yuu_filename)
+    ))
+  f.close()
