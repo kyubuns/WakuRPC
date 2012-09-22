@@ -1,4 +1,5 @@
 package;
+import Lambda;
 import js.Node;
 import Common;
 
@@ -26,12 +27,12 @@ class Connection {
     m_socket.on('message', function (data:Dynamic) {
       if(data.length != 3) return;
       try {
-        var commandNo  = cast(data[0], Int);
+        var commandNo  = {{'data[0]'|cast('Int')}};
         if(m_handshaked == false) return;
         if(commandNo < 0 || commandNo != m_commandNo+1) throw "wrong command NO. Actual-"+Std.string(commandNo)+", Expected-" + Std.string(m_commandNo+1);
         m_commandNo = commandNo;
 
-        var functionNo = cast(data[1], Int);
+        var functionNo = {{'data[1]'|cast('Int')}};
         var args:Dynamic = data[2];
         var func = m_functions.get(functionNo);
         if(func == null) throw "non-existent function - " + Std.string(functionNo);
@@ -59,7 +60,7 @@ class Connection {
 
   private function handshakeRequest(data:Dynamic) {
     try {
-      var protocolhash = cast(data, String);
+      var protocolhash = {{'data'|cast('String')}};
       if(protocolhash != '{{yuuversion}}') throw "wrong version";
       trace("handshake ok");
       m_handshaked = true;
@@ -87,11 +88,14 @@ class Connection {
   {% for function in CtoS %}
   private function call_{{function.name}}(args:Dynamic) {
     if(args.length != {{function.args|length}}) return;
+    var tmp:Dynamic;
     {% for arg in function.args %}
-    {% if arg.kind == 0 %}
-    var {{arg.name}}:{{arg.type}} = cast(args[{{loop.index0}}], {{arg.type}});
-    {% elif arg.kind == 1 %}
-    var {{arg.name}}:{{arg.type}} = sanitize(cast(args[{{loop.index0}}], {{arg.type}}));
+    {% if arg.is_array %}
+    tmp = {{loop.index0|to_arg}};
+    var {{arg.name}} = new {{arg.type}}();
+    for(i in 0...tmp.length) {{arg.name}}.push({{"tmp[i]"|cast('Int')}});
+    {% else %}
+    var {{arg.name}}:{{arg.type}} = {{loop.index0|to_arg|cast(arg.type)}};
     {% endif %}
     {% endfor %}
     {{function.name}}({% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}{% endfor %});
@@ -105,14 +109,14 @@ class Connection {
   public function {{function.name}}({% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}:{{arg.type}}{% endfor %}):Bool {
     if(!m_handshaked) return false;
     {% for arg in function.args %}
-    {% if arg.kind == 0 %}
-    var {{arg.name}}_:{{arg.type}} = cast({{arg.name}}, {{arg.type}});
-    {% elif arg.kind == 1 %}
-    var {{arg.name}}_:{{arg.type}} = sanitize(cast({{arg.name}}, {{arg.type}}));
+    {% if arg.type == 'String' %}
+    {{arg.name}} = sanitize({{arg.name}});
+    {% elif arg.type == 'Array<String>' %}
+    {{arg.name}} = Lambda.array(Lambda.map({{arg.name}}, sanitize));
     {% endif %}
     {% endfor %}
     if(m_commandNo > 1000) m_commandNo = 0;
-    m_socket.emit('message', [++m_commandNo, {{function.id}}, [{% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}_{% endfor %}]]);
+    m_socket.emit('message', [++m_commandNo, {{function.id}}, [{% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}{% endfor %}]]);
     return true;
   }
   {% endfor %}

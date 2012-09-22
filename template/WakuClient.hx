@@ -18,8 +18,8 @@ class Connection {
         if(m_handshaked == false) return;
         if(data.length != 3) return;
         try {
-          m_commandNo  = cast(data[0], Int);
-          var functionNo = cast(data[1], Int);
+          m_commandNo  = {{'data[0]'|cast('Int')}};
+          var functionNo = {{'data[1]'|cast('Int')}};
           var args:Dynamic = data[2];
           var func = m_functions.get(functionNo);
           if(func == null) throw "non-existent function";
@@ -48,8 +48,8 @@ class Connection {
   private function handshakeReply(data:Dynamic):Void {
     if(data.length != 2) return;
     try {
-      m_handshaked = cast(data[0], Bool);
-      m_commandNo  = cast(data[1], Int);
+      m_handshaked = {{'data[0]'|cast('Bool')}};
+      m_commandNo  = {{'data[1]'|cast('Int')}};
       if(m_handshaked == false) throw "reject";
 
       m_functions = new IntHash<Dynamic->Void>();
@@ -66,11 +66,14 @@ class Connection {
   {% for function in StoC %}
   private function call_{{function.name}}(args:Dynamic) {
     if(args.length != {{function.args|length}}) return;
+    var tmp:Dynamic;
     {% for arg in function.args %}
-    {% if arg.kind == 0 %}
-    var {{arg.name}}:{{arg.type}} = cast(args[{{loop.index0}}], {{arg.type}});
-    {% elif arg.kind == 1 %}
-    var {{arg.name}}:{{arg.type}} = sanitize(cast(args[{{loop.index0}}], {{arg.type}}));
+    {% if arg.is_array %}
+    tmp = {{loop.index0|to_arg}};
+    var {{arg.name}} = new {{arg.type}}();
+    for(i in 0...tmp.length) {{arg.name}}.push({{"tmp[i]"|cast('Int')}});
+    {% else %}
+    var {{arg.name}}:{{arg.type}} = {{loop.index0|to_arg|cast(arg.type)}};
     {% endif %}
     {% endfor %}
     {{function.name}}({% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}{% endfor %});
@@ -84,13 +87,14 @@ class Connection {
   public function {{function.name}}({% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}:{{arg.type}}{% endfor %}):Bool {
     if(!m_handshaked) return false;
     {% for arg in function.args %}
-    {% if arg.kind == 0 %}
-    var {{arg.name}}_:{{arg.type}} = cast({{arg.name}}, {{arg.type}});
-    {% elif arg.kind == 1 %}
-    var {{arg.name}}_:{{arg.type}} = sanitize(cast({{arg.name}}, {{arg.type}}));
+    {% if arg.type == 'String' %}
+    {{arg.name}} = sanitize({{arg.name}});
+    {% elif arg.type == 'Array<String>' %}
+    {{arg.name}} = Lambda.array(Lambda.map({{arg.name}}, sanitize));
     {% endif %}
     {% endfor %}
-    m_socket.emit('message', [++m_commandNo, {{function.id}}, [{% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}_{% endfor %}]]);
+    if(m_commandNo > 1000) m_commandNo = 0;
+    m_socket.emit('message', [++m_commandNo, {{function.id}}, [{% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}{% endfor %}]]);
     return true;
   }
   {% endfor %}
