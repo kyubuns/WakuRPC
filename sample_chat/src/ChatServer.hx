@@ -22,9 +22,9 @@ class Client extends Connection{
     for(con in Client.clients) con.info("ID:"+Std.string(myid)+"さんが帰ったよ〜", []);
   }
 
-  override public function chat(name:String, msg:String):Void {
-    if(name == "" || msg == "") return;
-    for(con in clients) con.chatNotify(myid, name, msg);
+  override public function chat(msg:Msg):Void {
+    if(msg.name == "" || msg.msg == "") return;
+    for(con in clients) con.chatNotify(myid, msg.name, msg.msg);
   }
 
 }

@@ -47,7 +47,7 @@ class ChatClient {
         var name:String = new JQuery("#name").val();
         var msg:String = new JQuery("#message").val();
         if(name == "" || msg == "") return;
-        con.chat(name, msg);
+        con.chat(new Msg(name,msg, 234));
         new JQuery("#message").val("");
       });
     });

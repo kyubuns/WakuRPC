@@ -29,11 +29,17 @@ def cast(value, arg_type):
   if arg_type == 'Int' or arg_type == 'Float' or arg_type == 'Bool':
     return "cast(" + value + ", " + arg_type + ")"
   elif arg_type == 'String':
-    return "sanitize(cast(" + value + ", " + arg_type + "))"
+    return "Sanitizer.run(cast(" + value + ", " + arg_type + "))"
   else:
-    return "siran"
+    return arg_type + ".create(" + value + ")"
+
 def to_arg(value):
   return "args[" + str(value) + "]"
+
+def is_class(v):
+  if v == 'Int' or v == 'Float' or v == 'Bool' or v == 'String':
+    return False
+  return True
 
 
 #main
@@ -49,6 +55,7 @@ yuu = yaml.load(open(yuu_filename).read())
 env = Environment(loader=FileSystemLoader("."))
 env.filters['cast'] = cast
 env.filters['to_arg'] = to_arg
+env.tests['classname'] = is_class
 
 random.seed(sha1file(yuu_filename))
 random_ids = range(1000, 10000)
@@ -57,7 +64,6 @@ random.shuffle(random_ids)
 lists = {}
 lists['C->S'] = []
 lists['S->C'] = []
-lists['enum'] = []
 lists['struct'] = []
 
 for name, args in yuu.items():
@@ -70,13 +76,10 @@ for name, args in yuu.items():
   random_ids.pop()
   tmp = []
   for arg in args[1:]:
-    if type == 'enum':
-      tmp.append(arg[0])
+    if arg[1] == 'Array':
+      tmp.append({'name':arg[0], 'type':'Array<'+arg[2]+'>', 'elementtype':arg[2], 'is_array':True})
     else:
-      if arg[1] == 'Array':
-        tmp.append({'name':arg[0], 'type':'Array<'+arg[2]+'>', 'elementtype':arg[2], 'is_array':True})
-      else:
-        tmp.append({'name':arg[0], 'type':arg[1], 'is_array':False})
+      tmp.append({'name':arg[0], 'type':arg[1], 'is_array':False})
 
   output['args'] = tmp
   lists[type].append(output)
@@ -87,8 +90,7 @@ f = codecs.lookup('utf_8')[-1](f)
 f.write(template.render(
   CtoS       = lists['C->S'],
   StoC       = lists['S->C'],
-  enum       = lists['enum'],
-  struct     = lists['struct'],
+  structs    = lists['struct'],
   yuuversion = sha1file(yuu_filename)
   ))
 f.close()

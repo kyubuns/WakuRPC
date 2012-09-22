@@ -3,6 +3,59 @@ import Lambda;
 import js.Node;
 import Common;
 
+{% for struct in structs %}
+class {{struct.name}} {
+  public function new({% for arg in struct.args %}{% if not loop.first %}, {% endif %}{{arg.name}}_:{{arg.type}}{% endfor %}) {
+    {% for arg in struct.args %}
+    {{arg.name}} = {{arg.name}}_;
+    {% endfor %}
+  }
+
+  public static function create(args:Dynamic):{{struct.name}} {
+    trace(args);
+    trace(args.length);
+    if(args.length != {{struct.args|length}}) throw "new {{struct.name}} : wrong args";
+
+    var tmp = new {{struct.name}}(
+      {% for arg in struct.args %}
+      {{loop.index0|to_arg|cast(arg.type)}}{% if not loop.last %},{% endif %}
+      {% endfor %}
+    );
+    return tmp;
+  }
+
+  public function to_array():Array<Dynamic> {
+    var tmp = new Array<Dynamic>();
+    {% for arg in struct.args %}
+    {% if arg.type == 'String' %}
+    tmp.push(Sanitizer.run({{arg.name}}));
+    {% elif arg.type == 'Array<String>' %}
+    tmp.push(Lambda.array(Lambda.map({{arg.name}}, Sanitizer.run)));
+    {% elif arg.type is classname %}
+    tmp.push({{arg.name}}.to_array());
+    {% else %}
+    tmp.push({{arg.name}});
+    {% endif %}
+    {% endfor %}
+    return tmp;
+  }
+
+  {% for arg in struct.args %}
+  public var {{arg.name}}:{{arg.type}};
+  {% endfor %}
+}
+{% endfor %}
+
+class Sanitizer {
+  static public function run(str:String):String {
+    str = StringTools.replace(str, "<", '&lt;');
+    str = StringTools.replace(str, ">", '&gt;');
+    str = StringTools.replace(str, '"', '&quot;');
+    str = StringTools.replace(str, "'", '&apos;');
+    return str;
+  }
+}
+
 class Server {
   private var m_io:SocketIO;
 
@@ -50,14 +103,6 @@ class Connection {
     m_commandNo = -1024;
   }
 
-  static private function sanitize(str:String):String {
-    str = StringTools.replace(str, "<", '&lt;');
-    str = StringTools.replace(str, ">", '&gt;');
-    str = StringTools.replace(str, '"', '&quot;');
-    str = StringTools.replace(str, "'", '&$39;');
-    return str;
-  }
-
   private function handshakeRequest(data:Dynamic) {
     try {
       var protocolhash = {{'data'|cast('String')}};
@@ -91,30 +136,36 @@ class Connection {
     {% if arg.is_array %}
     tmp = {{loop.index0|to_arg}};
     var {{arg.name}} = new {{arg.type}}();
-    for(i in 0...tmp.length) {{arg.name}}.push({{"tmp[i]"|cast(arg.type)}});
+    for(i in 0...tmp.length) {{arg.name}}.push({{"tmp[i]"|cast(arg.elementtype)}});
     {% else %}
     var {{arg.name}}:{{arg.type}} = {{loop.index0|to_arg|cast(arg.type)}};
     {% endif %}
     {% endfor %}
-    {{function.name}}({% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}{% endfor %});
+    {{function.name}}({% for arg in function.args %}{{arg.name}}{% if not loop.last %}, {% endif %}{% endfor %});
   }
-  public function {{function.name}}({% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}:{{arg.type}}{% endfor %}):Void {}
+  public function {{function.name}}({% for arg in function.args %}{{arg.name}}:{{arg.type}}{% if not loop.last %}, {% endif %}{% endfor %}):Void {}
   {% endfor %}
 //====================================================================================
 
 //====================================================================================
   {% for function in StoC %}
-  public function {{function.name}}({% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}:{{arg.type}}{% endfor %}):Bool {
+  public function {{function.name}}({% for arg in function.args %}{{arg.name}}:{{arg.type}}{% if not loop.last %}, {% endif %}{% endfor %}):Bool {
     if(!m_handshaked) return false;
+    if(m_commandNo > 1000) m_commandNo = 0;
+    m_socket.emit('message', [++m_commandNo, {{function.id}}, [
     {% for arg in function.args %}
     {% if arg.type == 'String' %}
-    {{arg.name}} = sanitize({{arg.name}});
+    Sanitizer.run({{arg.name}})
     {% elif arg.type == 'Array<String>' %}
-    {{arg.name}} = Lambda.array(Lambda.map({{arg.name}}, sanitize));
+    Lambda.array(Lambda.map({{arg.name}}, Sanitizer.run))
+    {% elif arg.type is classname %}
+    {{arg.name}}.to_array()
+    {% else %}
+    {{arg.name}}
     {% endif %}
+    {% if not loop.last %},{% endif %}
     {% endfor %}
-    if(m_commandNo > 1000) m_commandNo = 0;
-    m_socket.emit('message', [++m_commandNo, {{function.id}}, [{% for arg in function.args %}{% if not loop.first %}, {% endif %}{{arg.name}}{% endfor %}]]);
+    ]]);
     return true;
   }
   {% endfor %}

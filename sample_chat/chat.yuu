@@ -1,8 +1,15 @@
+Msg :
+ [
+   struct,
+   [name , String],
+   [msg  , String],
+   [dummy, Int]
+ ]
+
 chat :
  [
    C->S,
-   [name , String],
-   [msg  , String],
+   [msg , Msg],
  ]
 
 chatNotify :
