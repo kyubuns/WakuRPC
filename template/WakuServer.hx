@@ -44,6 +44,9 @@ class Connection {
         trace("wrong data received ["+errorMsg+"]");
         socket.disconnect();
       }
+      catch( unknown : Dynamic ) {
+        trace("Unknown exception : "+Std.string(unknown));
+      }
     });
 
     m_socket.on('handshake', handshakeRequest);
