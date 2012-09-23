@@ -35,7 +35,6 @@ class Client extends Connection{
 }
 
 class ChatServer {
-  static var next_id = 0;
   public static function main() {
     var server:Server = new Server();
     server.listen(9876, {'log level': 3, 'heartbeat interval': 120, 'close timeout': 180}, Client);
