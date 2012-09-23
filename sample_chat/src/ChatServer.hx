@@ -1,7 +1,12 @@
 import Std;
 import js.Node;
 import WakuServer;
-import Common;
+import WakuCommon;
+
+@:native("setInterval")
+extern class SetInterval {
+  function new(f:Void->Void, interval:Int) : Void;
+}
 
 class Client extends Connection{
   private static var nextId:Int = 0;

@@ -2,6 +2,7 @@ import Std;
 import js.JQuery;
 import js.Lib;
 import WakuClient;
+import WakuCommon;
 
 class Client extends Connection {
   override public function onopen():Void {
