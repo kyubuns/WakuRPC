@@ -18,7 +18,7 @@ class Connection {
         if(m_handshaked == false) return;
         if(data.length != 3) return;
         try {
-          m_commandNo  = {{'data[0]'|cast('Int')}};
+          var commandNo = {{'data[0]'|cast('Int')}};
           var functionNo = {{'data[1]'|cast('Int')}};
           var args:Dynamic = data[2];
           var func = m_functions.get(functionNo);
@@ -78,7 +78,8 @@ class Connection {
   {% for function in CtoS %}
   public function {{function.name}}({% for arg in function.args %}{{arg.name}}:{{arg.type}}{% if not loop.last %}, {% endif %}{% endfor %}):Bool {
     if(!m_handshaked) return false;
-    m_socket.emit('message', [++m_commandNo, {{function.id}}, [
+    if(m_commandNo == 1000) m_commandNo = 0;
+    m_socket.emit('message', [m_commandNo++, {{function.id}}, [
     {% for arg in function.args %}
     {% if arg.type == 'String' %}
     Sanitizer.run({{arg.name}})

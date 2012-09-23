@@ -29,7 +29,9 @@ class Connection {
       try {
         var commandNo  = {{'data[0]'|cast('Int')}};
         if(m_handshaked == false) return;
-        if(commandNo < 0 || commandNo != m_commandNo+1) throw "wrong command NO. Actual-"+Std.string(commandNo)+", Expected-" + Std.string(m_commandNo+1);
+        m_commandNo++;
+        if(m_commandNo == 1000) m_commandNo = 0;
+        if(commandNo < 0 || commandNo != m_commandNo) throw "wrong command NO. Actual-"+Std.string(commandNo)+", m_commandNo-" + Std.string(m_commandNo);
         m_commandNo = commandNo;
 
         var functionNo = {{'data[1]'|cast('Int')}};
@@ -56,11 +58,11 @@ class Connection {
       if(protocolhash != '{{yuuversion}}') throw "wrong version";
       trace("handshake ok");
       m_handshaked = true;
-      m_commandNo = 0;
+      m_commandNo = -1;//handshakeで0を返すと次にClientから返ってくる値は-1 + 1のため
     }
     catch(errorMsg:String) trace("handshake error[" + errorMsg + "]");
 
-    m_socket.emit('handshake', [m_handshaked, m_commandNo]);
+    m_socket.emit('handshake', [m_handshaked, 0]);
     if(m_handshaked == false) {
       m_socket.disconnect();
       return;
@@ -98,8 +100,7 @@ class Connection {
   {% for function in StoC %}
   public function {{function.name}}({% for arg in function.args %}{{arg.name}}:{{arg.type}}{% if not loop.last %}, {% endif %}{% endfor %}):Bool {
     if(!m_handshaked) return false;
-    if(m_commandNo > 1000) m_commandNo = 0;
-    m_socket.emit('message', [++m_commandNo, {{function.id}}, [
+    m_socket.emit('message', [m_commandNo, {{function.id}}, [
     {% for arg in function.args %}
     {% if arg.type == 'String' %}
     Sanitizer.run({{arg.name}})
