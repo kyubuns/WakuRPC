@@ -9,28 +9,28 @@ class Connection {
 
   public function new():Void {}
   public function connect(host:String):Void {
-    m_socket = IO.connect(host, { reconnect:false, 'connect timeout': 1000 });
+    m_socket = IO.connect(host, { 'connect timeout': 1000 });
     m_socket.on('error', function(){ error("socket error"); });
     m_socket.on('connect_failed', connectFailed);
+    m_socket.on('disconnect', onclose);
+    m_socket.on('message', function(data:Dynamic) {
+      if(m_handshaked == false) return;
+      if(data.length != 3) return;
+      try {
+        var commandNo = {{'data[0]'|cast('Int')}};
+        var functionNo = {{'data[1]'|cast('Int')}};
+        var args:Dynamic = data[2];
+        var func = m_functions.get(functionNo);
+        if(func == null) throw "non-existent function";
+        func(args);
+      }
+      catch(errorMsg:String) {
+        //クライアント側は変なデータきてもそのデータ無視するだけで。
+        trace("wrong data received ["+errorMsg+"]");
+      }
+    });
+    m_socket.on('handshake', handshakeReply);
     m_socket.on('connect', function() {
-      m_socket.on('disconnect', onclose);
-      m_socket.on('message', function(data:Dynamic) {
-        if(m_handshaked == false) return;
-        if(data.length != 3) return;
-        try {
-          var commandNo = {{'data[0]'|cast('Int')}};
-          var functionNo = {{'data[1]'|cast('Int')}};
-          var args:Dynamic = data[2];
-          var func = m_functions.get(functionNo);
-          if(func == null) throw "non-existent function";
-          func(args);
-        }
-        catch(errorMsg:String) {
-          //クライアント側は変なデータきてもそのデータ無視するだけで。
-          trace("wrong data received ["+errorMsg+"]");
-        }
-      });
-      m_socket.on('handshake', handshakeReply);
       m_socket.emit('handshake', '{{yuuversion}}');
       m_handshaked = false;
       m_commandNo = -1024;
