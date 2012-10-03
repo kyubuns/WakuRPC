@@ -31,7 +31,7 @@ class Connection {
         if(m_handshaked == false) return;
         m_commandNo++;
         if(m_commandNo == 1000) m_commandNo = 0;
-        if(commandNo < 0 || commandNo != m_commandNo) throw "wrong command NO. Actual-"+Std.string(commandNo)+", m_commandNo-" + Std.string(m_commandNo);
+        if(commandNo != m_commandNo) throw "wrong command NO. Actual-"+Std.string(commandNo)+", m_commandNo-" + Std.string(m_commandNo);
         m_commandNo = commandNo;
 
         var functionNo = {{'data[1]'|cast('Int')}};
